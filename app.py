@@ -1,21 +1,21 @@
-# app.py  – Finance Simulation  (live balance, no st.form)
+# app.py – Finance Simulation (live balance & instant results)
 
 import streamlit as st
 import pandas as pd
 
-# ---------- CONFIG -------------------------------------------------
-YEARS    = 4
-BUDGET   = 1_000_000
-SHARES   = 1_000_000
-TAX_RATE = 0.30
-PE       = 12
+# ----- CONFIG ------------------------------------------------------
+YEARS     = 4
+BUDGET    = 1_000_000
+SHARES    = 1_000_000
+TAX_RATE  = 0.30
+PE        = 12
 
-def k(spend, base):        # diminishing-return helper
-    return base / (1 + spend/400_000)
+def k(spend, base):                     # diminishing-return helper
+    return base / (1 + spend / 400_000)
 
 COEFF = dict(M=2.5, I=0.00004, R=0.8, E=0.00002, E_OPEX=0.20)
 
-# ---------- SESSION STATE ------------------------------------------
+# ----- SESSION STATE ----------------------------------------------
 if "year" not in st.session_state:
     st.session_state.update(
         year      = 1,
@@ -26,15 +26,30 @@ if "year" not in st.session_state:
         history   = []
     )
 
-y   = st.session_state.year               # current year
-key = lambda base: f"{base}_{y}"          # per-year widget keys
+y   = st.session_state.year
+key = lambda base: f"{base}_{y}"        # unique widget keys per year
 
-# ---------- PAGE HEADER --------------------------------------------
+# ----- HEADER ------------------------------------------------------
 st.title("💰 Finance Strategy Simulation")
-st.caption("Allocate **exactly $1 000 000** each year. "
-           "The *Run Year* button unlocks when Remaining = 0.")
+st.caption("Allocate **exactly $1 000 000** each year.  "
+           "The **Run Year** button unlocks when *Remaining* = 0.")
 
-# ---------- INPUT WIDGETS ------------------------------------------
+# ----- RESULTS FIRST (so they appear above the form) --------------
+if st.session_state.history:
+    df = pd.DataFrame(st.session_state.history)
+    st.subheader("📊 Results so far")
+    st.dataframe(
+        df.style.format({
+            "Revenue":"{:,}", "GM$":"{:,}", "GM%":"{:.1%}",
+            "OPEX":"{:,}",    "EBIT":"{:,}", "Tax":"{:,}",
+            "Net Profit":"{:,}", "EPS":"{:.2f}", "Market Value":"{:,}"
+        }),
+        use_container_width=True
+    )
+    st.line_chart(df.set_index("Year")["EPS"])
+    st.divider()
+
+# ----- INPUT WIDGETS ----------------------------------------------
 c1, c2 = st.columns(2)
 
 with c1:
@@ -61,35 +76,31 @@ with c2:
     custsvc = st.number_input("Customer Service",0, BUDGET, 0, 10_000, key=key("cust"))
     E = train + custsvc
 
-# ---------- BALANCE & RUN BUTTON -----------------------------------
+# ----- BALANCE + RUN BUTTON ---------------------------------------
 total   = M + I + R + E
 balance = BUDGET - total
 
 if balance == 0:
     st.success("Remaining: $0  ✅")
 else:
-    msg = "under-allocate" if balance > 0 else "over-allocate"
-    st.error(f"Remaining: ${balance:,.0f}  ❌  (You {msg})")
+    st.error(f"Remaining: ${balance:,}  ❌")
 
 submitted = st.button(f"Run Year {y}", disabled=(balance != 0))
 
-# ---------- CALCULATE & LOG RESULTS --------------------------------
-# ---------- CALCULATE & LOG RESULTS --------------------------------
+# ----- CALCULATE & LOG --------------------------------------------
 if submitted:
     s = st.session_state
 
-    # -- calculations --
-    rev  = s.rev + k(M, COEFF["M"]) * M + k(R, COEFF["R"]) * s.prev_R
-    cogs = rev * max(0, s.cogs_pct - k(E, COEFF["E"]))
-    gm   = rev - cogs
+    rev  = s.rev  + k(M, COEFF["M"]) * M + k(R, COEFF["R"]) * s.prev_R
+    cogs = rev    * max(0, s.cogs_pct - k(E, COEFF["E"]))
+    gm   = rev    - cogs
     opex = max(0, s.opex - COEFF["E_OPEX"] * E)
-    ebit = gm - opex
+    ebit = gm     - opex
     tax  = max(0, ebit * TAX_RATE)
-    np   = ebit - tax
+    np   = ebit   - tax
     eps  = np / SHARES
     mv   = eps * SHARES * PE
 
-    # -- store results --
     s.history.append({
         "Year": y,
         "Revenue": rev,
@@ -103,7 +114,6 @@ if submitted:
         "Market Value": mv
     })
 
-    # -- carry-forwards --
     s.update(
         year     = y + 1,
         rev      = rev,
@@ -112,4 +122,11 @@ if submitted:
         prev_R   = R
     )
 
-    st.toast(f"✅ Year {y} processed!")
+    st.experimental_rerun()   # immediately refresh page to show new results
+
+# ----- GAME END ----------------------------------------------------
+if st.session_state.year > YEARS:
+    st.success("🏆 Simulation complete – highest EPS wins.")
+    if st.button("Show detailed analysis"):
+        st.bar_chart(pd.DataFrame(st.session_state.history)
+                     .set_index("Year")[["Revenue","Net Profit"]])
