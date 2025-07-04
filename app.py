@@ -74,20 +74,23 @@ else:
 submitted = st.button(f"Run Year {y}", disabled=(balance != 0))
 
 # ---------- CALCULATE & LOG RESULTS --------------------------------
+# ---------- CALCULATE & LOG RESULTS --------------------------------
 if submitted:
     s = st.session_state
 
-    rev  = s.rev + k(M, COEFF["M"])*M + k(R, COEFF["R"])*s.prev_R
+    # -- calculations --
+    rev  = s.rev + k(M, COEFF["M"]) * M + k(R, COEFF["R"]) * s.prev_R
     cogs = rev * max(0, s.cogs_pct - k(E, COEFF["E"]))
     gm   = rev - cogs
-    opex = max(0, s.opex - COEFF["E_OPEX"]*E)
+    opex = max(0, s.opex - COEFF["E_OPEX"] * E)
     ebit = gm - opex
-    tax  = max(0, ebit*TAX_RATE)
+    tax  = max(0, ebit * TAX_RATE)
     np   = ebit - tax
     eps  = np / SHARES
     mv   = eps * SHARES * PE
 
-        s.history.append({
+    # -- store results --
+    s.history.append({
         "Year": y,
         "Revenue": rev,
         "GM$": gm,
@@ -99,3 +102,14 @@ if submitted:
         "EPS": eps,
         "Market Value": mv
     })
+
+    # -- carry-forwards --
+    s.update(
+        year     = y + 1,
+        rev      = rev,
+        cogs_pct = max(0, s.cogs_pct - k(E, COEFF["E"])),
+        opex     = opex,
+        prev_R   = R
+    )
+
+    st.toast(f"✅ Year {y} processed!")
