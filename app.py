@@ -87,9 +87,19 @@ if valid:
     eps   = np / SHARES
     mv    = eps * SHARES * PE
 
-    s.history.append(dict(Year=s.year, Revenue=rev, GM$=gm, GM%=gm/rev,
-                          OPEX=opex, EBIT=ebit, Tax=tax, NetProfit=np,
-                          EPS=eps, MarketValue=mv))
+    s.history.append({
+    "Year": s.year,
+    "Revenue": rev,
+    "GM$": gm,
+    "GM%": gm / rev if rev else 0,
+    "OPEX": opex,
+    "EBIT": ebit,
+    "Tax": tax,
+    "NetProfit": np,
+    "EPS": eps,
+    "MarketValue": mv
+})
+
 
     # update carry-forwards
     s.update(year=s.year+1, rev=rev, cogs_pct=max(0, s.cogs_pct - k(E, COEFF["E"])),
