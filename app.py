@@ -124,6 +124,7 @@ if submitted:
 
     st.experimental_rerun()   # immediately refresh page to show new results
 
+
 # ----- GAME END ----------------------------------------------------
 if st.session_state.year > YEARS:
     st.success("🏆 Simulation complete – highest EPS wins.")
