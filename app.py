@@ -87,4 +87,15 @@ if submitted:
     eps  = np / SHARES
     mv   = eps * SHARES * PE
 
-    s.history.append({
+        s.history.append({
+        "Year": y,
+        "Revenue": rev,
+        "GM$": gm,
+        "GM%": gm / rev,
+        "OPEX": opex,
+        "EBIT": ebit,
+        "Tax": tax,
+        "Net Profit": np,
+        "EPS": eps,
+        "Market Value": mv
+    })
