@@ -122,7 +122,7 @@ if submitted:
         prev_R   = R
     )
 
-      st.rerun()  # properly indented inside an if or function block
+        st.rerun()  # properly indented inside an if or function block
 
 
 
