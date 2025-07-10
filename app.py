@@ -40,10 +40,16 @@ if st.session_state.history:
     st.subheader("📊 Results so far")
     st.dataframe(
         df.style.format({
-            "Revenue":"{:,}", "GM$":"{:,}", "GM%":"{:.1%}",
-            "OPEX":"{:,}",    "EBIT":"{:,}", "Tax":"{:,}",
-            "Net Profit":"{:,}", "EPS":"{:.2f}", "Market Value":"{:,}"
-        }),
+    "Revenue": "{:,.2f}",
+    "GM$": "{:,.2f}",
+    "GM%": "{:.2%}",
+    "OPEX": "{:,.2f}",
+    "EBIT": "{:,.2f}",
+    "Tax": "{:,.2f}",
+    "Net Profit": "{:,.2f}",
+    "EPS": "{:.2f}",
+    "Market Value": "{:,.2f}"
+})
         use_container_width=True
     )
     st.line_chart(df.set_index("Year")["EPS"])
