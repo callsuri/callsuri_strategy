@@ -1,4 +1,4 @@
-# app.py – Finance Simulation (live balance & instant results)
+# app.py – Finance Simulation (realistic strategic logic)
 
 import streamlit as st
 import pandas as pd
@@ -10,8 +10,26 @@ SHARES    = 1_000_000
 TAX_RATE  = 0.30
 PE        = 12
 
-def k(spend, base):                     # diminishing-return helper
-    return base / (1 + spend / 400_000)
+# Improved k() logic with strategy-aware return modifiers
+def k(spend, base, lever, year):
+    """
+    Return reduced returns over time for different levers.
+    - Innovation/R&D are most useful early (Year 1–2)
+    - Efficiency is mid-game (Year 2–3)
+    - Marketing works best late (Year 3–4)
+    """
+    if lever == "I":
+        modifier = 1.2 if year == 1 else 0.8
+    elif lever == "R":
+        modifier = 1.0 if year <= 2 else 0.7
+    elif lever == "E":
+        modifier = 1.0 if year >= 2 else 0.5
+    elif lever == "M":
+        modifier = 0.6 if year <= 2 else 1.2
+    else:
+        modifier = 1.0
+
+    return (base * modifier) / (1 + spend / 400_000)
 
 COEFF = dict(M=2.5, I=0.00004, R=0.8, E=0.00002, E_OPEX=0.20)
 
@@ -97,13 +115,13 @@ submitted = st.button(f"Run Year {y}", disabled=(balance != 0))
 if submitted:
     s = st.session_state
 
-    rev  = s.rev  + k(M, COEFF["M"]) * M + k(R, COEFF["R"]) * s.prev_R
-    cogs = rev    * max(0, s.cogs_pct - k(E, COEFF["E"]))
-    gm   = rev    - cogs
+    rev  = s.rev + k(M, COEFF["M"], "M", y) * M + k(R, COEFF["R"], "R", y) * s.prev_R
+    cogs = rev * max(0, s.cogs_pct - k(E, COEFF["E"], "E", y))
+    gm   = rev - cogs
     opex = max(0, s.opex - COEFF["E_OPEX"] * E)
-    ebit = gm     - opex
+    ebit = gm - opex
     tax  = max(0, ebit * TAX_RATE)
-    np   = ebit   - tax
+    np   = ebit - tax
     eps  = np / SHARES
     mv   = eps * SHARES * PE
 
@@ -123,13 +141,12 @@ if submitted:
     s.update(
         year     = y + 1,
         rev      = rev,
-        cogs_pct = max(0, s.cogs_pct - k(E, COEFF["E"])),
+        cogs_pct = max(0, s.cogs_pct - k(E, COEFF["E"], "E", y)),
         opex     = opex,
         prev_R   = R
     )
 
-    st.rerun()  # ✅ Fixed and properly formatted
-
+    st.rerun()
 
 # ----- GAME END ----------------------------------------------------
 if st.session_state.year > YEARS:
