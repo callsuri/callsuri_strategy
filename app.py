@@ -122,7 +122,7 @@ if submitted:
         prev_R   = R
     )
 
-    st.experimental_rerun()   # immediately refresh page to show new results
+   st.rerun() # immediately refresh page to show new results
 
 
 # ----- GAME END ----------------------------------------------------
