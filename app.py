@@ -122,7 +122,8 @@ if submitted:
         prev_R   = R
     )
 
-   st.rerun() # immediately refresh page to show new results
+      st.rerun()  # properly indented inside an if or function block
+
 
 
 # ----- GAME END ----------------------------------------------------
